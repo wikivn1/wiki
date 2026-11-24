@@ -1,0 +1,1205 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#100e1a">
+    <meta name="description" content="CC Wiki: hướng dẫn lệnh, game, kinh tế, Tu Tiên và quản trị bot.">
+    <title>CC Wiki — Hướng dẫn bot</title>
+    <style>
+:root {
+    color-scheme: dark;
+    --bg: #100e1a;
+    --panel: rgba(25, 22, 38, .82);
+    --panel-solid: #191626;
+    --panel-hover: #211d32;
+    --line: rgba(208, 192, 255, .11);
+    --text: #f5f1ff;
+    --muted: #9c97ad;
+    --purple: #b89aff;
+    --pink: #f2a4d5;
+    --mint: #8de5cb;
+    --mono: "DM Mono", Consolas, monospace;
+    --sans: "DM Sans", "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 100px; }
+body {
+    margin: 0;
+    min-width: 320px;
+    overflow-x: hidden;
+    background:
+        radial-gradient(ellipse at 70% -15%, rgba(108, 73, 164, .15), transparent 42%),
+        var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+}
+button, input { font: inherit; }
+a { color: inherit; text-decoration: none; }
+button { color: inherit; }
+[hidden] { display: none !important; }
+
+.ambient {
+    position: fixed;
+    z-index: -1;
+    width: 360px;
+    height: 360px;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: .14;
+    pointer-events: none;
+    animation: drift 16s ease-in-out infinite alternate;
+}
+.ambient-one { top: 20%; left: -250px; background: #8a64e8; }
+.ambient-two { right: -260px; bottom: 8%; background: #dc7ac0; animation-delay: -7s; }
+.skip-link {
+    position: fixed;
+    top: 8px;
+    left: 8px;
+    z-index: 20;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: var(--purple);
+    color: #171020;
+    transform: translateY(-150%);
+}
+.skip-link:focus { transform: translateY(0); }
+
+.wiki-shell { min-height: 100vh; }
+.sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 10;
+    display: flex;
+    width: 248px;
+    flex-direction: column;
+    padding: 26px 18px 20px;
+    border-right: 1px solid var(--line);
+    background: rgba(16, 14, 26, .86);
+    backdrop-filter: blur(18px);
+}
+.brand { display: flex; align-items: center; gap: 12px; padding: 0 8px 34px; }
+.brand-mark {
+    display: grid;
+    width: 40px;
+    height: 40px;
+    place-items: center;
+    border: 1px solid rgba(200, 176, 255, .42);
+    border-radius: 13px;
+    background: linear-gradient(145deg, #a988ff, #d99fdf);
+    box-shadow: 0 0 24px rgba(183, 142, 255, .22);
+    color: #20172d;
+    font-size: 22px;
+    font-weight: 800;
+}
+.brand-mark span { color: #fff; }
+.brand-copy { display: flex; flex-direction: column; gap: 2px; letter-spacing: .13em; }
+.brand-copy strong { font-size: 13px; }
+.brand-copy small { color: var(--muted); font-size: 9px; letter-spacing: .19em; }
+.side-label, .section-kicker {
+    color: #777188;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .18em;
+}
+.side-label { padding: 0 11px 11px; }
+.category-nav { display: grid; gap: 4px; overflow-y: auto; }
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    width: 100%;
+    padding: 10px 11px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 13px;
+    text-align: left;
+    transition: color .2s, background .2s, border-color .2s, transform .2s;
+}
+.nav-item:hover { transform: translateX(2px); background: rgba(255,255,255,.04); color: var(--text); }
+.nav-item.active { border-color: rgba(184,154,255,.16); background: rgba(184,154,255,.10); color: #e4d7ff; }
+.nav-icon { display: grid; width: 25px; height: 25px; place-items: center; border-radius: 8px; background: rgba(255,255,255,.05); font-size: 13px; }
+.nav-item.active .nav-icon { background: rgba(184,154,255,.15); }
+.sidebar-bottom { display: grid; gap: 13px; margin-top: auto; padding: 14px 8px 0; border-top: 1px solid var(--line); }
+.online-chip { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 11px; }
+.online-dot, .status-pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 12px rgba(141,229,203,.7); }
+.dashboard-link { color: #858095; font-size: 11px; transition: color .2s; }
+.dashboard-link:hover { color: var(--purple); }
+
+.main-column { min-height: 100vh; margin-left: 248px; }
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 8;
+    display: flex;
+    height: 72px;
+    align-items: center;
+    gap: 20px;
+    padding: 0 clamp(22px, 5vw, 72px);
+    border-bottom: 1px solid var(--line);
+    background: rgba(16,14,26,.76);
+    backdrop-filter: blur(20px);
+}
+.breadcrumbs { display: flex; align-items: center; gap: 9px; color: #777188; font-size: 12px; white-space: nowrap; }
+.breadcrumbs i { color: #514c60; font-style: normal; }
+.breadcrumbs strong { color: #e4deef; font-weight: 600; }
+.search-box {
+    display: flex;
+    width: min(390px, 45vw);
+    height: 38px;
+    align-items: center;
+    gap: 9px;
+    margin-left: auto;
+    padding: 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: rgba(255,255,255,.035);
+    color: #827c91;
+    transition: border-color .2s, box-shadow .2s;
+}
+.search-box:focus-within { border-color: rgba(184,154,255,.5); box-shadow: 0 0 0 3px rgba(184,154,255,.08); }
+.search-box > span { font-size: 21px; line-height: 1; }
+.search-box input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font-size: 12px; }
+.search-box input::placeholder { color: #777188; }
+kbd { flex: 0 0 auto; padding: 3px 5px; border: 1px solid var(--line); border-radius: 5px; color: #777188; font: 10px var(--mono); }
+.top-home, .menu-toggle { display: grid; width: 36px; height: 36px; place-items: center; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.035); color: #c6bbdc; transition: .2s; }
+.top-home:hover, .menu-toggle:hover { border-color: rgba(184,154,255,.4); color: var(--purple); }
+.menu-toggle { display: none; cursor: pointer; }
+
+main { width: min(1120px, 100%); margin: 0 auto; padding: 36px clamp(22px, 5vw, 72px) 20px; }
+.hero {
+    position: relative;
+    display: flex;
+    min-height: 350px;
+    align-items: center;
+    overflow: hidden;
+    padding: 44px 48px 83px;
+    border: 1px solid rgba(193,167,255,.18);
+    border-radius: 24px;
+    background:
+        radial-gradient(ellipse at 75% 30%, rgba(148,103,220,.2), transparent 43%),
+        linear-gradient(125deg, #211c32 0%, #171423 58%, #201829 100%);
+    box-shadow: 0 24px 80px rgba(0,0,0,.2), inset 0 1px rgba(255,255,255,.04);
+}
+.hero-grid {
+    position: absolute;
+    inset: 0;
+    opacity: .14;
+    background-image: linear-gradient(rgba(212,197,255,.13) 1px, transparent 1px), linear-gradient(90deg, rgba(212,197,255,.13) 1px, transparent 1px);
+    background-size: 46px 46px;
+    mask-image: linear-gradient(90deg, transparent, black 62%, black);
+}
+.hero-copy { position: relative; z-index: 1; max-width: 610px; }
+.eyebrow { display: flex; align-items: center; gap: 9px; color: #c4aaff; font-size: 10px; font-weight: 700; letter-spacing: .18em; }
+.eyebrow-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--pink); box-shadow: 0 0 13px var(--pink); }
+h1 { margin: 20px 0 12px; font-size: clamp(38px, 5vw, 62px); font-weight: 700; letter-spacing: -.055em; line-height: .99; }
+h1 span { color: #c6a9ff; }
+.hero-copy > p { max-width: 500px; margin: 19px 0 24px; color: #aaa4b9; font-size: 14px; line-height: 1.7; }
+.hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.primary-button, .secondary-button { display: inline-flex; height: 40px; align-items: center; justify-content: center; gap: 10px; padding: 0 15px; border: 1px solid transparent; border-radius: 10px; cursor: pointer; font-size: 12px; font-weight: 700; transition: transform .2s, box-shadow .2s, background .2s; }
+.primary-button { background: linear-gradient(105deg, #b599ff, #d0a6ee); color: #201729; box-shadow: 0 7px 22px rgba(181,153,255,.18); }
+.primary-button:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(181,153,255,.3); }
+.secondary-button { border-color: var(--line); background: rgba(255,255,255,.04); color: #ddd5eb; }
+.secondary-button:hover { transform: translateY(-2px); background: rgba(255,255,255,.08); }
+.secondary-button code, .hero-foot code { color: var(--mint); font: 11px var(--mono); }
+.hero-art { position: absolute; top: 50%; right: 5%; width: 265px; height: 265px; transform: translateY(-54%); }
+.orbit { position: absolute; inset: 15px; border: 1px solid rgba(197,171,255,.22); border-radius: 50%; }
+.orbit-one { transform: rotateX(68deg) rotate(-23deg); animation: orbit 19s linear infinite; }
+.orbit-two { inset: 42px; border-color: rgba(241,164,213,.24); transform: rotateY(65deg) rotate(25deg); animation: orbit 13s linear infinite reverse; }
+.orbit-core { position: absolute; top: 50%; left: 50%; display: grid; width: 96px; height: 96px; place-items: center; border: 1px solid rgba(221,203,255,.48); border-radius: 29px; background: linear-gradient(145deg, rgba(184,154,255,.26), rgba(240,164,213,.15)); box-shadow: 0 0 55px rgba(173,131,255,.26), inset 0 1px rgba(255,255,255,.17); color: #eadfff; font-size: 47px; font-weight: 800; transform: translate(-50%, -50%) rotate(-9deg); animation: bob 5s ease-in-out infinite; }
+.float-token { position: absolute; display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid rgba(255,255,255,.14); border-radius: 11px; background: rgba(31,26,47,.88); color: var(--pink); box-shadow: 0 8px 25px rgba(0,0,0,.25); animation: bob 4s ease-in-out infinite; }
+.token-one { top: 15%; left: 10%; }
+.token-two { right: 4%; top: 42%; color: var(--mint); animation-delay: -1.5s; }
+.token-three { bottom: 10%; left: 30%; color: var(--purple); animation-delay: -2.4s; }
+.hero-foot { position: absolute; right: 0; bottom: 0; left: 0; display: flex; align-items: center; gap: 32px; min-height: 62px; padding: 12px 48px; border-top: 1px solid rgba(255,255,255,.07); background: rgba(8,7,14,.2); }
+.hero-foot > div { display: flex; align-items: baseline; gap: 8px; }
+.hero-foot strong { color: #efe8ff; font-size: 16px; }
+.hero-foot span { color: #8b859b; font-size: 10px; }
+.hero-foot .prefix-note { align-items: center; margin-left: auto; color: #aba5b8; font-size: 11px; }
+.status-pulse { display: inline-block; margin-right: 2px; animation: pulse 2s ease-out infinite; }
+
+.quick-note { display: flex; align-items: center; gap: 14px; margin: 22px 0 58px; padding: 15px 18px; border: 1px solid rgba(141,229,203,.13); border-radius: 14px; background: linear-gradient(100deg, rgba(141,229,203,.07), rgba(141,229,203,.015)); }
+.note-icon { display: grid; width: 34px; height: 34px; flex: 0 0 auto; place-items: center; border-radius: 10px; background: rgba(141,229,203,.1); color: var(--mint); font-size: 18px; }
+.quick-note strong { font-size: 12px; }
+.quick-note p { margin: 4px 0 0; color: #a7a1b4; font-size: 11px; line-height: 1.6; }
+.quick-note code, .command-card code { color: #d3bfff; font: 11px var(--mono); }
+.note-arrow { margin-left: auto; color: #657f7c; }
+.section-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin: 0 2px 20px; }
+.section-heading h2 { margin: 7px 0 0; font-size: clamp(22px, 3vw, 29px); letter-spacing: -.035em; }
+.result-count { color: #807a90; font: 11px var(--mono); }
+.section-intro { margin: 8px 0 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.category-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.category-tile {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: 15px;
+    background: linear-gradient(135deg, rgba(28,25,42,.88), rgba(21,19,32,.88));
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+    transition: transform .2s, border-color .2s, background .2s, box-shadow .2s;
+}
+.category-tile:hover, .category-tile:focus-visible {
+    transform: translateY(-2px);
+    border-color: rgba(184,154,255,.35);
+    background: linear-gradient(135deg, rgba(42,34,61,.96), rgba(27,24,41,.96));
+    box-shadow: 0 12px 35px rgba(0,0,0,.16);
+    outline: none;
+}
+.tile-icon { display: grid; width: 42px; height: 42px; flex: 0 0 auto; place-items: center; border: 1px solid rgba(255,255,255,.08); border-radius: 13px; background: rgba(255,255,255,.05); font-size: 20px; }
+.tile-copy { display: grid; min-width: 0; gap: 5px; }
+.tile-copy strong { font-size: 13px; }
+.tile-copy small { color: var(--muted); font-size: 11px; line-height: 1.55; }
+.tile-count { color: #8e879d; font: 10px var(--mono); }
+.tile-arrow { margin: 2px 0 0 auto; color: var(--purple); font-size: 16px; }
+.category-detail { display: grid; gap: 17px; }
+.detail-heading { display: grid; gap: 8px; margin-bottom: 2px; }
+.detail-heading h2 { margin: 0; font-size: clamp(25px, 3vw, 34px); letter-spacing: -.04em; }
+.detail-heading > p { max-width: 740px; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
+.back-button {
+    justify-self: start;
+    margin-bottom: 8px;
+    padding: 8px 11px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: rgba(255,255,255,.035);
+    color: #d7c8f2;
+    cursor: pointer;
+    font-size: 11px;
+    transition: .2s;
+}
+.back-button:hover { border-color: rgba(184,154,255,.35); background: rgba(184,154,255,.08); }
+.guide-index { display: flex; flex-wrap: wrap; gap: 7px; padding: 3px 0 1px; }
+.guide-jump { padding: 7px 10px; border: 1px solid var(--line); border-radius: 99px; background: rgba(255,255,255,.025); color: #aaa2b8; cursor: pointer; font-size: 10px; transition: .2s; }
+.guide-jump:hover, .guide-jump:focus-visible { border-color: rgba(184,154,255,.4); color: #e4d7ff; outline: none; }
+.guide-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
+.guide-card { min-width: 0; padding: 17px 18px; border: 1px solid var(--line); border-radius: 14px; background: rgba(25,22,38,.68); scroll-margin-top: 95px; }
+.guide-card-wide { grid-column: 1 / -1; }
+.guide-card h3 { margin: 0 0 8px; color: #e9e1f8; font-size: 14px; }
+.guide-card p { margin: 0; color: #a7a1b4; font-size: 11px; line-height: 1.7; }
+.guide-card ul { display: grid; gap: 7px; margin: 11px 0 0; padding-left: 18px; color: #a7a1b4; font-size: 11px; line-height: 1.65; }
+.guide-card li::marker { color: var(--purple); }
+.guide-examples { display: grid; gap: 7px; margin-top: 12px; }
+.guide-example { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 9px; color: #a7a1b4; font-size: 10px; line-height: 1.6; }
+.guide-example code { color: #d3bfff; font: 10px var(--mono); }
+.guide-note { margin-top: 12px !important; padding: 10px 11px; border-left: 2px solid #d5ab76; border-radius: 0 8px 8px 0; background: rgba(213,171,118,.07); color: #cbb79a !important; }
+.realm-list { columns: 2; column-gap: 26px; margin: 12px 0 0; padding-left: 24px; color: #aaa4b9; font-size: 10px; line-height: 1.8; }
+.realm-list li { break-inside: avoid; padding-left: 3px; }
+.category-list { display: grid; gap: 18px; }
+.category-section {
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 17px;
+    background: linear-gradient(135deg, rgba(28,25,42,.88), rgba(21,19,32,.88));
+    transition: border-color .25s, transform .25s, box-shadow .25s;
+}
+.category-section:hover { border-color: rgba(184,154,255,.23); box-shadow: 0 12px 45px rgba(0,0,0,.13); }
+.category-header { display: flex; align-items: center; gap: 13px; padding: 21px 23px 17px; }
+.category-icon { display: grid; width: 40px; height: 40px; flex: 0 0 auto; place-items: center; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; background: rgba(255,255,255,.045); font-size: 19px; }
+.category-title { min-width: 0; }
+.category-title h3 { margin: 0; font-size: 15px; letter-spacing: -.01em; }
+.category-title p { margin: 4px 0 0; color: #898397; font-size: 11px; }
+.category-count { margin-left: auto; padding: 5px 8px; border: 1px solid var(--line); border-radius: 99px; color: #aaa2b8; font: 10px var(--mono); white-space: nowrap; }
+.command-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; padding: 0 14px 15px; }
+.command-card { position: relative; min-width: 0; padding: 13px 14px 12px; border: 1px solid rgba(255,255,255,.055); border-radius: 11px; background: rgba(8,7,14,.24); transition: transform .2s, border-color .2s, background .2s; }
+.command-card:hover { transform: translateY(-2px); border-color: rgba(184,154,255,.24); background: rgba(184,154,255,.045); }
+.command-top { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.command-card code { overflow: hidden; color: #d9c8ff; text-overflow: ellipsis; white-space: nowrap; }
+.command-type { flex: 0 0 auto; padding: 3px 6px; border-radius: 5px; background: rgba(184,154,255,.09); color: #b8a5da; font-size: 9px; font-weight: 700; letter-spacing: .04em; }
+.command-type.slash { background: rgba(141,229,203,.08); color: #8edbc3; }
+.copy-command { display: grid; width: 25px; height: 25px; flex: 0 0 auto; place-items: center; margin-left: auto; border: 1px solid transparent; border-radius: 7px; background: transparent; color: #777188; cursor: pointer; opacity: 0; transition: .2s; }
+.command-card:hover .copy-command, .copy-command:focus-visible { border-color: var(--line); background: rgba(255,255,255,.05); color: #ded5ed; opacity: 1; }
+.command-card p { margin: 10px 0 0; color: #9892a6; font-size: 11px; line-height: 1.6; }
+.command-card .permission { display: inline-flex; margin-top: 9px; color: #d4ae88; font-size: 9px; letter-spacing: .02em; }
+.empty-state { padding: 70px 20px; color: var(--muted); text-align: center; }
+.empty-state > span { display: block; color: var(--purple); font-size: 40px; }
+.empty-state strong { display: block; margin-top: 9px; color: #e4deef; }
+.empty-state p { font-size: 12px; }
+.footer { display: flex; justify-content: space-between; margin: 44px auto 0; padding: 20px clamp(22px, 5vw, 72px) 26px; border-top: 1px solid var(--line); color: #696477; font-size: 9px; letter-spacing: .14em; }
+.footer i { padding: 0 5px; color: #a48ad4; font-style: normal; }
+.footer a { color: #8c859b; font-size: 10px; letter-spacing: 0; transition: color .2s; }
+.footer a:hover { color: var(--purple); }
+.toast { position: fixed; right: 24px; bottom: 24px; z-index: 30; padding: 11px 15px; border: 1px solid rgba(141,229,203,.2); border-radius: 10px; background: #1b2630; color: #b9f1dd; font-size: 12px; opacity: 0; pointer-events: none; transform: translateY(10px); transition: .25s; }
+.toast.show { opacity: 1; transform: translateY(0); }
+.reveal { opacity: 0; transform: translateY(14px); transition: opacity .65s ease, transform .65s cubic-bezier(.2,.8,.2,1); }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.category-section { animation: rise-in .45s both; }
+
+@keyframes rise-in { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes drift { to { transform: translate(80px, -50px) scale(1.15); } }
+@keyframes orbit { to { rotate: 360deg; } }
+@keyframes bob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -9px; } }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(141,229,203,.5); } 70% { box-shadow: 0 0 0 6px rgba(141,229,203,0); } 100% { box-shadow: 0 0 0 0 rgba(141,229,203,0); } }
+
+@media (max-width: 900px) {
+    .sidebar { width: 218px; }
+    .main-column { margin-left: 218px; }
+    .hero { padding-left: 32px; }
+    .hero-foot { padding-left: 32px; }
+    .hero-art { right: -5%; opacity: .7; }
+    .command-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 680px) {
+    .sidebar { width: 270px; transform: translateX(-101%); transition: transform .28s ease; box-shadow: 20px 0 60px rgba(0,0,0,.3); }
+    .sidebar.open { transform: translateX(0); }
+    .main-column { margin-left: 0; }
+    .topbar { height: 62px; gap: 11px; padding: 0 15px; }
+    .menu-toggle { display: grid; width: 34px; height: 34px; }
+    .breadcrumbs { display: none; }
+    .search-box { width: auto; flex: 1; }
+    .search-box kbd, .top-home { display: none; }
+    main { padding: 20px 15px 15px; }
+    .hero { min-height: 400px; align-items: flex-start; padding: 34px 23px 94px; border-radius: 19px; }
+    .hero-copy { max-width: 100%; }
+    h1 { font-size: clamp(38px, 10vw, 54px); }
+    .hero-copy > p { max-width: 390px; font-size: 13px; }
+    .hero-art { top: auto; right: -20px; bottom: 25px; width: 145px; height: 145px; opacity: .5; transform: none; }
+    .orbit { inset: 5px; }
+    .orbit-two { inset: 23px; }
+    .orbit-core { width: 57px; height: 57px; border-radius: 18px; font-size: 29px; }
+    .float-token { width: 25px; height: 25px; border-radius: 8px; font-size: 12px; }
+    .hero-foot { min-height: 68px; gap: 15px; padding: 10px 20px; }
+    .hero-foot > div { display: grid; gap: 1px; }
+    .hero-foot strong { font-size: 14px; }
+    .hero-foot span { font-size: 8px; }
+    .hero-foot .prefix-note { display: none; }
+    .quick-note { align-items: flex-start; margin: 15px 0 43px; padding: 13px; }
+    .note-arrow { display: none; }
+    .section-heading { align-items: end; margin-bottom: 14px; }
+    .section-heading h2 { font-size: 22px; }
+    .category-tiles, .guide-grid { grid-template-columns: 1fr; }
+    .category-tile { padding: 15px; }
+    .guide-card-wide { grid-column: auto; }
+    .realm-list { columns: 1; }
+    .category-header { padding: 17px 15px 13px; }
+    .command-grid { padding: 0 9px 10px; }
+    .command-card { padding: 12px 10px; }
+    .copy-command { opacity: 1; }
+    .footer { margin-top: 30px; padding: 18px 15px 22px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    .reveal { opacity: 1; transform: none; }
+}
+
+    </style>
+
+</head>
+<body>
+    <div class="ambient ambient-one" aria-hidden="true"></div>
+    <div class="ambient ambient-two" aria-hidden="true"></div>
+    <a class="skip-link" href="#wiki-main">Bỏ qua điều hướng</a>
+    <div class="wiki-shell">
+        <aside class="sidebar" id="sidebar">
+            <a class="brand" href="/wiki" aria-label="CC Wiki trang chủ">
+                <span class="brand-mark">C<span>.</span></span>
+                <span class="brand-copy"><strong>CC</strong><small>WIKI BOT</small></span>
+            </a>
+            <div class="side-label">TÀI LIỆU</div>
+            <nav class="category-nav" id="category-nav" aria-label="Danh mục wiki"></nav>
+            <div class="sidebar-bottom">
+                <div class="online-chip"><span class="online-dot"></span> Hướng dẫn lệnh</div>
+                <a class="dashboard-link" href="/">← Quay lại dashboard</a>
+            </div>
+        </aside>
+
+        <div class="main-column">
+            <header class="topbar">
+                <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Mở danh mục" aria-expanded="false">☰</button>
+                <div class="breadcrumbs"><span>CC</span><i>/</i><strong>Wiki</strong></div>
+                <label class="search-box">
+                    <span aria-hidden="true">⌕</span>
+                    <input id="command-search" type="search" placeholder="Tìm lệnh hoặc tính năng..." autocomplete="off" aria-label="Tìm lệnh">
+                    <kbd>⌘ K</kbd>
+                </label>
+                <a class="top-home" href="/" aria-label="Về dashboard">↗</a>
+            </header>
+
+            <main id="wiki-main">
+                <section class="hero reveal">
+                    <div class="hero-grid" aria-hidden="true"></div>
+                    <div class="hero-copy">
+                        <div class="eyebrow"><span class="eyebrow-dot"></span> TÀI LIỆU CC BOT</div>
+                        <h1>Mọi lệnh.<br><span>Một nơi để khám phá.</span></h1>
+                        <p>Tra cứu nhanh các tính năng của bot — từ minigame, kinh tế đến tu tiên và quản trị server.</p>
+                        <div class="hero-actions">
+                            <a class="primary-button" href="#category-overview">Khám phá danh mục <span>↓</span></a>
+                            <button class="secondary-button" type="button" data-copy="p help">Sao chép <code>p help</code></button>
+                        </div>
+                    </div>
+                    <div class="hero-art" aria-hidden="true">
+                        <div class="orbit orbit-one"></div>
+                        <div class="orbit orbit-two"></div>
+                        <div class="orbit-core">C</div>
+                        <span class="float-token token-one">✦</span>
+                        <span class="float-token token-two">⌘</span>
+                        <span class="float-token token-three">✧</span>
+                    </div>
+                    <div class="hero-foot">
+                        <div><strong id="command-total">—</strong><span>lệnh được giới thiệu</span></div>
+                        <div><strong id="category-total">—</strong><span>danh mục</span></div>
+                        <div class="prefix-note"><span class="status-pulse"></span> Prefix chính: <code>p</code></div>
+                    </div>
+                </section>
+
+                <section class="quick-note reveal" aria-label="Bắt đầu nhanh">
+                    <div class="note-icon">✳</div>
+                    <div>
+                        <strong>Bắt đầu nhanh</strong>
+                        <p>Gõ <code>p help</code> trong server để xem hướng dẫn ngay trên Discord. Các lệnh có dấu <code>/</code> là slash command.</p>
+                    </div>
+                    <span class="note-arrow">↗</span>
+                </section>
+
+                <section class="category-overview reveal" id="category-overview">
+                    <div class="section-heading">
+                        <div>
+                            <span class="section-kicker">THƯ VIỆN HƯỚNG DẪN</span>
+                            <h2>Chọn danh mục</h2>
+                            <p class="section-intro">Bấm vào một mục để xem cách chơi, cách dùng lệnh và hướng dẫn chi tiết.</p>
+                        </div>
+                        <div class="result-count" id="result-count" aria-live="polite"></div>
+                    </div>
+                    <div class="category-tiles" id="category-tiles"></div>
+                </section>
+
+                <section class="category-detail" id="category-detail" hidden>
+                    <div class="detail-heading">
+                        <button class="back-button" id="back-to-categories" type="button">← Tất cả danh mục</button>
+                        <span class="section-kicker" id="detail-kicker">HƯỚNG DẪN DANH MỤC</span>
+                        <h2 id="detail-title"></h2>
+                        <p id="detail-description"></p>
+                    </div>
+                    <nav class="guide-index" id="guide-index" aria-label="Mục lục hướng dẫn"></nav>
+                    <div class="guide-grid" id="guide-grid"></div>
+                    <div class="section-heading reveal" id="commands-heading">
+                        <div>
+                            <span class="section-kicker">THƯ VIỆN LỆNH</span>
+                            <h2>Lệnh trong danh mục</h2>
+                        </div>
+                        <div class="result-count" id="detail-result-count" aria-live="polite"></div>
+                    </div>
+                    <div class="empty-state" id="empty-state" hidden>
+                        <span>⌕</span>
+                        <strong>Chưa tìm thấy lệnh này</strong>
+                        <p>Thử từ khóa khác hoặc xóa nội dung tìm kiếm.</p>
+                    </div>
+                    <div class="category-list" id="category-list"></div>
+                </section>
+            </main>
+
+            <footer class="footer">
+                <span>CC <i>•</i> WIKI</span>
+                <a href="#wiki-main">Lên đầu trang ↑</a>
+            </footer>
+        </div>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script>
+const categories = [
+    {
+        id: "start", icon: "✦", title: "Bắt đầu", description: "Cách dùng lệnh và những bước đầu tiên.", tint: "purple",
+        commands: [
+            { usage: "p help", description: "Mở danh sách lệnh chính ngay trong Discord.", kind: "prefix" },
+            { usage: "/language <lang>", description: "Đổi ngôn ngữ hiển thị của bot.", kind: "slash" },
+            { usage: "p cccd", description: "Tạo hoặc xem CCCD riêng qua tin nhắn DM.", kind: "prefix" },
+            { usage: "p bank", description: "Mở trang tổng quan ngân hàng và xem hướng dẫn.", kind: "prefix" }
+        ]
+    },
+    {
+        id: "games", icon: "🎮", title: "Trò chơi", description: "Minigame, đấu trí và các trò chơi nhiều người.", tint: "pink",
+        commands: [
+            { usage: "p tx  /  /tx", description: "Mở phiên Tài Xỉu để mọi người tham gia đặt cược.", kind: "both" },
+            { usage: "p bc  /  /bc", description: "Bắt đầu phiên Bầu Cua.", kind: "both" },
+            { usage: "/baucua", description: "Tạo phiên Bầu Cua trong server.", kind: "slash" },
+            { usage: "p slot <tiền>  /  /slot <amount>", description: "Quay slot. Hỗ trợ số tiền, 50k, 1m hoặc all.", kind: "both" },
+            { usage: "p mine [tiền|all] [số mìn]  /  /mine", description: "Chơi dò mìn; có thể chọn cược và số mìn.", kind: "both" },
+            { usage: "p xo @user  /  /xo @user", description: "Thách đấu cờ caro.", kind: "both" },
+            { usage: "p co @user", description: "Thách đấu cờ vua.", kind: "prefix" },
+            { usage: "p noitu", description: "Bắt đầu trò chơi nối từ; xem trạng thái hoặc dừng bằng các lựa chọn tương ứng.", kind: "prefix" },
+            { usage: "/trieuphu", description: "Chơi Ai Là Triệu Phú.", kind: "slash" },
+            { usage: "p love @user", description: "Đo mức độ tình cảm giữa bạn và một người.", kind: "prefix" },
+            { usage: "p daily  /  /daily", description: "Nhận thưởng định kỳ. Lệnh slash có thời gian hồi 2 giờ.", kind: "both" }
+        ]
+    },
+    {
+        id: "economy", icon: "◈", title: "Kinh tế & ngân hàng", description: "Ví tiền, chuyển khoản, cấp bậc và tài khoản.", tint: "mint",
+        commands: [
+            { usage: "p cash [@user]  /  /cash [user]", description: "Xem số dư ví của bạn hoặc người được chọn.", kind: "both" },
+            { usage: "p gift @user <tiền>  /  /gift", description: "Tặng tiền cho người khác.", kind: "both" },
+            { usage: "p bank", description: "Xem hồ sơ ngân hàng, rank, hạn mức và hướng dẫn.", kind: "prefix" },
+            { usage: "p bank mua <rank>", description: "Mua rank ngân hàng theo thứ tự VIP → VIP+ → MVP → MVP+.", kind: "prefix" },
+            { usage: "p bank tao", description: "Mở tài khoản ngân hàng khi đủ rank và đã có CCCD.", kind: "prefix" },
+            { usage: "p bank gui <tiền> [rieng]", description: "Gửi tiền vào tài khoản thường hoặc ngân hàng riêng.", kind: "prefix" },
+            { usage: "p bank rut <tiền> [rieng]", description: "Rút tiền về ví.", kind: "prefix" },
+            { usage: "p bank nhan", description: "Nhận trợ cấp 25.000.000$ mỗi giờ (VIP+ trở lên).", kind: "prefix" },
+            { usage: "p bank lamthe", description: "Phát hành thẻ ngân hàng (MVP trở lên).", kind: "prefix" },
+            { usage: "p bank doi <tiền>", description: "Đổi dollar thành Linh Thạch theo tỉ lệ 1.000:1.", kind: "prefix" },
+            { usage: "p bank rieng <tên>", description: "Tạo ngân hàng riêng (MVP+ và cần CCCD).", kind: "prefix" },
+            { usage: "p bank tangcuoc", description: "Tăng hạn mức cược từng bước, tối đa 50.000.000$.", kind: "prefix" },
+            { usage: "p vaytien  /  p thoihan  /  p trano", description: "Vay tiền, xem thời hạn và thanh toán khoản nợ.", kind: "prefix" }
+        ]
+    },
+    {
+        id: "gacha", icon: "▣", title: "Cửa hàng & Gacha", description: "Mua vật phẩm, mở hòm và quản lý túi đồ.", tint: "gold",
+        commands: [
+            { usage: "p cc", description: "Xem 20 cấp hòm và giá mua.", kind: "prefix" },
+            { usage: "p muahom <số>", description: "Mua hòm theo số thứ tự; mỗi hòm đi kèm key.", kind: "prefix" },
+            { usage: "p muakey", description: "Mua một key riêng.", kind: "prefix" },
+            { usage: "p mohom", description: "Dùng một hòm và một key để nhận vật phẩm ngẫu nhiên.", kind: "prefix" },
+            { usage: "p gachainv  /  p khogacha", description: "Xem túi vật phẩm Gacha.", kind: "prefix" },
+            { usage: "p bangachainv <số>", description: "Bán vật phẩm theo số thứ tự trong túi.", kind: "prefix" }
+        ]
+    },
+    {
+        id: "cultivation", icon: "☯", title: "Tu Tiên", description: "Lộ trình nhập môn, tu luyện, đột phá, linh căn, chỉ số, trang bị và Tông Môn.", tint: "purple",
+        commands: [
+            { usage: "kiemtra  →  taytuy  →  dankhi", description: "Ba bước mở nhân vật và nhận linh căn.", kind: "prefix" },
+            { usage: "nhapmon 1|2|3|4", description: "Chọn Tu Đạo, Tu Ma, Tu Phật hoặc Kiếm Tu.", kind: "prefix" },
+            { usage: "tutien", description: "Tu luyện nhận tu vi và Linh Thạch; hồi 60 giây.", kind: "prefix" },
+            { usage: "dotpha", description: "Đột phá cảnh giới khi đủ T9 và EXP yêu cầu.", kind: "prefix" },
+            { usage: "bangcap  /  p exp", description: "Xem EXP cần cho từng cảnh giới.", kind: "prefix" },
+            { usage: "linhthach", description: "Xem linh căn, phái, cảnh giới, EXP, Linh Thạch, Tông Môn và trang bị.", kind: "prefix" },
+            { usage: "shop  /  mua <id>  /  kho", description: "Mua vật phẩm, dùng Linh Thạch và xem hành trang.", kind: "prefix" },
+            { usage: "dungthuoc <id>  /  moruong <id>", description: "Dùng vật phẩm hoặc mở rương theo ID.", kind: "prefix" },
+            { usage: "duc  /  duc <recipe_id>  /  cuonghoa <id>", description: "Xem công thức, chế tạo và cường hóa trang bị.", kind: "prefix" },
+            { usage: "congphap  /  hoc <id>  /  thanthong", description: "Xem và học công pháp hoặc thần thông.", kind: "prefix" },
+            { usage: "p khaimo  /  p quydoi  /  checkin", description: "Đào Linh Thạch, xem cấp Linh Thạch và điểm danh.", kind: "prefix" },
+            { usage: "giatong 1|2|3  /  nhiemvu", description: "Gia nhập Tông Môn và xem nhiệm vụ.", kind: "prefix" },
+            { usage: "noptongmon <id>  /  nhantongmon <id>", description: "Nộp nhiệm vụ hoặc nhận thưởng Tông Môn.", kind: "prefix" },
+            { usage: "thangcap  /  tangkinh  /  duocvien  /  tythi", description: "Thăng chức, học kinh, thu hoạch và tỷ thí.", kind: "prefix" },
+            { usage: "tutienhelp", description: "Mở hướng dẫn Tu Tiên ngay trong Discord.", kind: "prefix" }
+        ]
+    },
+    {
+        id: "mmo", icon: "⚔", title: "MMO & Chiến đấu", description: "Chủng tộc, chế độ, chỉ số chiến đấu, PK và bản đồ.", tint: "pink",
+        commands: [
+            { usage: "chungtoc", description: "Chọn chủng tộc nhân vật.", kind: "prefix" },
+            { usage: "chungtoc nhan|yeu|hon|vu", description: "Chọn Nhân, Yêu, Hồn hoặc Vu Tộc trước khi tu luyện.", kind: "prefix" },
+            { usage: "chedo  /  chedo phanphai|caudao|chuongmon", description: "Xem hoặc chọn chế độ chơi.", kind: "prefix" },
+            { usage: "stats", description: "Xem chỉ số chiến đấu.", kind: "prefix" },
+            { usage: "pk @user", description: "Thách đấu người chơi khác.", kind: "prefix" },
+            { usage: "p sanquai", description: "Săn yêu thú phù hợp cảnh giới để nhận phần thưởng.", kind: "prefix" },
+            { usage: "p bando  /  p map", description: "Xem bản đồ.", kind: "prefix" },
+            { usage: "p dichuyen <1-5>", description: "Di chuyển đến khu vực đã mở đủ cảnh giới.", kind: "prefix" }
+        ]
+    },
+    {
+        id: "werewolf", icon: "☾", title: "Ma Sói", description: "Tạo phòng, tham gia và tra cứu thống kê.", tint: "mint",
+        commands: [
+            { usage: "/masoi", description: "Tạo phòng Ma Sói.", kind: "slash" },
+            { usage: "/masoi action:huy", description: "Hủy ván đang diễn ra (host hoặc Admin).", kind: "slash" },
+            { usage: "/masoi action:info", description: "Xem trạng thái và số người chơi.", kind: "slash" },
+            { usage: "/masoi action:top", description: "Xem bảng xếp hạng Ma Sói.", kind: "slash" },
+            { usage: "/masoi action:stats", description: "Xem thống kê cá nhân.", kind: "slash" },
+            { usage: "/item <index> [target]", description: "Dùng vật phẩm trong ván.", kind: "slash" },
+            { usage: "/items", description: "Xem kho vật phẩm Ma Sói.", kind: "slash" },
+            { usage: "/wwstats [user]", description: "Xem thống kê của bạn hoặc người khác.", kind: "slash" },
+            { usage: "/wwtop", description: "Xem bảng xếp hạng Ma Sói.", kind: "slash" }
+        ]
+    },
+    {
+        id: "admin", icon: "⚙", title: "Quản trị & tiện ích", description: "Lệnh dành cho người có quyền phù hợp.", tint: "gold",
+        commands: [
+            { usage: "/perm <action> [role]", description: "Thêm, xóa hoặc liệt kê role staff.", kind: "slash", permission: "Owner / Admin" },
+            { usage: "/ban <user>  /  /unban <user>", description: "Cấm hoặc gỡ cấm thành viên.", kind: "slash", permission: "Quyền quản trị" },
+            { usage: "/kick <user>", description: "Mời thành viên rời server.", kind: "slash", permission: "Quyền quản lý thành viên" },
+            { usage: "/mute <user>  /  /unmute <user>", description: "Timeout hoặc bỏ timeout thành viên.", kind: "slash", permission: "Quyền kiểm duyệt" },
+            { usage: "/verify <action>", description: "Thiết lập, xem trạng thái hoặc tắt xác minh.", kind: "slash", permission: "Quản trị server" },
+            { usage: "/antinuke <action>", description: "Bật, tắt hoặc xem trạng thái anti-nuke.", kind: "slash", permission: "Quản trị server" },
+            { usage: "/language <lang>", description: "Đổi ngôn ngữ cho server.", kind: "slash" },
+            { usage: "/say  /  /sayembed", description: "Gửi tin nhắn hoặc embed bằng bot.", kind: "slash", permission: "Người được cấp quyền" },
+            { usage: "/dm  /  /dmembed  /  /dmmass", description: "Gửi DM theo lệnh; một số hành động giới hạn quyền.", kind: "slash", permission: "Người được cấp quyền" },
+            { usage: "/console", description: "Công cụ quản trị nội bộ.", kind: "slash", permission: "Owner" },
+            { usage: "/token  /  /quest", description: "Quản lý token và tác vụ Quest.", kind: "slash", permission: "Owner" }
+        ]
+    }
+];
+
+const categoryGuides = {
+    start: [
+        {
+            title: "Cách gọi lệnh",
+            text: "Lệnh prefix bắt đầu bằng p; lệnh slash bắt đầu bằng dấu /. Hãy nhập lệnh trong server có cài bot.",
+            examples: [
+                { command: "p help", description: "Xem danh sách lệnh prefix." },
+                { command: "/language", description: "Mở slash command và chọn ngôn ngữ theo Discord." }
+            ]
+        },
+        {
+            title: "Tạo hồ sơ cá nhân",
+            text: "Lệnh CCCD gửi thông tin riêng qua DM. Nếu bot không nhắn được, hãy bật nhận tin nhắn từ thành viên server.",
+            examples: [
+                { command: "p cccd", description: "Tạo hoặc xem CCCD riêng." },
+                { command: "p bank", description: "Xem hướng dẫn ngân hàng; không hiển thị mã CCCD." }
+            ],
+            note: "CCCD được gửi riêng cho chủ sở hữu; đừng chia sẻ ảnh hoặc nội dung DM."
+        }
+    ],
+    games: [
+        {
+            title: "Mở một ván chơi",
+            text: "Chọn lệnh game trong danh sách rồi làm theo nút hoặc hướng dẫn bot trả về. Một số game có cả prefix và slash command.",
+            examples: [
+                { command: "p tx", description: "Tạo phiên Tài Xỉu." },
+                { command: "p bc", description: "Tạo phiên Bầu Cua." },
+                { command: "p xo @user", description: "Gửi lời mời chơi caro." }
+            ]
+        },
+        {
+            title: "Đặt cược và nhận thưởng",
+            text: "Nhập số tiền theo cú pháp của trò chơi; cú pháp có tham số hiển thị trong thẻ lệnh. Kiểm tra số dư trước khi cược.",
+            examples: [
+                { command: "p slot 5000", description: "Quay slot với số tiền cụ thể." },
+                { command: "p mine 5000 3", description: "Ví dụ đặt cược dò mìn với số mìn." },
+                { command: "p daily", description: "Nhận thưởng định kỳ nếu đã hết hồi." }
+            ],
+            note: "Mỗi trò có giới hạn và thời gian hồi riêng; hãy đọc phản hồi của bot trước khi gửi tiếp."
+        }
+    ],
+    economy: [
+        {
+            title: "Ví tiền và chuyển tiền",
+            text: "Dùng cash để kiểm tra số dư. Khi tặng tiền, chọn đúng người nhận và nhập số tiền theo yêu cầu.",
+            examples: [
+                { command: "p cash", description: "Xem số dư của bạn." },
+                { command: "p cash @user", description: "Xem số dư người được chọn." },
+                { command: "p gift @user 1000", description: "Tặng 1.000 cho thành viên." }
+            ]
+        },
+        {
+            title: "Mở và dùng ngân hàng",
+            text: "Xem rank và điều kiện bằng p bank. Các thao tác tạo tài khoản, gửi/rút và nâng hạn mức chỉ dùng được khi đáp ứng yêu cầu rank.",
+            examples: [
+                { command: "p bank mua <rank>", description: "Mua rank ngân hàng." },
+                { command: "p bank tao", description: "Mở tài khoản khi đủ điều kiện." },
+                { command: "p bank gui <tiền>  /  p bank rut <tiền>", description: "Gửi vào hoặc rút khỏi tài khoản." }
+            ],
+            note: "Một số thao tác ngân hàng riêng yêu cầu CCCD và rank cụ thể; xem p bank để biết điều kiện hiện tại."
+        }
+    ],
+    gacha: [
+        {
+            title: "Mua hòm và mở thưởng",
+            text: "Xem danh sách hòm, mua hòm theo số thứ tự rồi mở khi đã có hòm và key.",
+            examples: [
+                { command: "p cc", description: "Xem các cấp hòm và giá." },
+                { command: "p muahom <số>", description: "Mua hòm theo số thứ tự." },
+                { command: "p muakey", description: "Mua key." },
+                { command: "p mohom", description: "Dùng hòm và key để nhận vật phẩm." }
+            ]
+        },
+        {
+            title: "Quản lý túi Gacha",
+            text: "Kiểm tra kho trước khi bán vật phẩm. Lệnh bán dùng số thứ tự hiển thị trong danh sách túi.",
+            examples: [
+                { command: "p gachainv", description: "Xem túi vật phẩm Gacha." },
+                { command: "p bangachainv <số>", description: "Bán vật phẩm theo số thứ tự." }
+            ]
+        }
+    ],
+    cultivation: [
+        {
+            title: "1 · Nhập môn",
+            text: "Làm đúng thứ tự bốn bước. Linh căn được hệ thống kiểm tra ngẫu nhiên; sau khi chọn phái, nhân vật mới bắt đầu tu luyện.",
+            examples: [
+                { command: "kiemtra", description: "Nhận linh căn." },
+                { command: "taytuy", description: "Hoàn thành bước tẩy tủy." },
+                { command: "dankhi", description: "Dẫn khí; khởi tạo Luyện Khí tầng 1." },
+                { command: "nhapmon 1|2|3|4", description: "1 Tu Đạo · 2 Tu Ma · 3 Tu Phật · 4 Kiếm Tu." }
+            ]
+        },
+        {
+            title: "2 · Tu luyện và lên tầng",
+            text: "Dùng tutien để nhận tu vi. Mỗi lần có hồi 60 giây, thưởng 10–30 tu vi cơ bản và 1–5 Linh Thạch; hệ số tu luyện có thể thay đổi theo dữ liệu linh căn/công pháp.",
+            examples: [
+                { command: "tutien", description: "Tu luyện một lượt." },
+                { command: "linhthach", description: "Theo dõi cảnh giới, tầng, tu vi hiện có và tu vi cần." },
+                { command: "checkin", description: "Điểm danh một lần mỗi ngày, nhận 500 theo logic hiện tại." }
+            ],
+            note: "Mỗi cảnh giới có 9 tầng. Khi đủ EXP, lệnh tu luyện tự tăng tối đa một tầng trong lượt đó."
+        },
+        {
+            title: "3 · Đột phá cảnh giới",
+            text: "Đạt tầng 9 và tích đủ ngưỡng tu vi của cảnh giới hiện tại rồi dùng dotpha. Thành công chuyển sang cảnh giới kế tiếp, tầng 1 và đặt tu vi về 0.",
+            bullets: [
+                "Ngưỡng mỗi tầng trong code: 100 × cảnh giới² khi cảnh giới 1–2; từ cảnh giới 3 trở lên là 100 × cảnh giới³.",
+                "Tỷ lệ cơ bản ở các cảnh giới đầu: 70% (Luyện Khí), 30% (Trúc Cơ), 5% (Kim Đan), 1% (Nguyên Anh).",
+                "Code cộng Khí Vận/200, trừ Nghiệp Lực/100 và cộng buff công pháp; tỷ lệ cuối bị giới hạn từ 0% đến 100%.",
+                "Từ Hóa Thần trở lên: nhánh code riêng có 30% thành công; thất bại mất 50% EXP.",
+                "Thất bại ở bốn cảnh giới đầu lần lượt mất 10%, 30%, 40% hoặc 50% EXP."
+            ],
+            examples: [
+                { command: "dotpha", description: "Thử đột phá khi đã đạt T9 và đủ tu vi." },
+                { command: "p hoc cp_1", description: "Học Thiếu Dương Quyết; dữ liệu khai báo buff đột phá 10%." }
+            ],
+            note: "Ở lần đột phá Luyện Khí → Trúc Cơ, Trúc Cơ Đan (ID p1) giúp tỷ lệ 100% nếu có trong túi. Nhánh Thiên Linh Căn cũng được code kiểm tra, nhưng tên này hiện không nằm trong danh sách linh căn được quay."
+        },
+        {
+            title: "4 · Bảng cảnh giới",
+            text: "Thứ tự cảnh giới được đọc trực tiếp từ REALMS trong bot.py. Chỉ số trong ngoặc là mã cảnh giới dùng trong công thức EXP.",
+            realms: [
+                "Phàm Nhân (0)", "Luyện Khí (1)", "Trúc Cơ (2)", "Kim Đan (3)", "Nguyên Anh (4)",
+                "Hóa Thần (5)", "Luyện Hư (6)", "Hợp Thể (7)", "Đại Thừa (8)", "Độ Kiếp (9)",
+                "Nhân Tiên (10)", "Địa Tiên (11)", "Thiên Tiên (12)", "Kim Tiên (13)", "Tiên Vương (14)",
+                "Tiên Tôn (15)", "Tiên Đế (16)", "Thần Hỏa Cảnh (17)", "Chân Thần (18)", "Thiên Thần (19)",
+                "Thần Vương (20)", "Chí Tôn (21)", "Chân Chúa (22)", "Hỗn Độn Cảnh (23)",
+                "Tạo Hóa Cảnh (24)", "Bản Nguyên Cảnh (25)", "Thiên Đạo Cảnh (26)"
+            ],
+            wide: true
+        },
+        {
+            title: "5 · Linh căn và đường tu",
+            text: "Linh căn do kiemtra quay; nhapmon chọn đường tu. Code chia lượt quay linh căn theo bốn nhóm:",
+            bullets: [
+                "Ngũ Hành: 40% cho nhóm Kim, Mộc, Thủy, Hỏa, Thổ.",
+                "Biến Dị: 45% cho nhóm Lôi, Băng, Phong, Ám, Quang, Nham, Độc, Huyết.",
+                "Kỳ Dị: 14,5% cho nhóm Kiếm, Trận, Vô Định.",
+                "Thần Thoại: 0,5% cho nhóm Không Gian, Thời Gian, Hỗn Độn, Huyền Hoàng, Vô Linh."
+            ],
+            note: "Chọn ngẫu nhiên đều trong từng nhóm: mỗi linh căn Thần Thoại tương ứng 0,1% theo logic hiện tại (comment trong source ghi 0,01%, không khớp phép tính). Các hệ số HP/ATK/DEF/break/cooldown trong ROOTS_DATA là dữ liệu khai báo; tutien hiện lấy atk_mul làm hệ số nhận tu vi."
+        },
+        {
+            title: "Hệ số linh căn đang khai báo",
+            text: "Thứ tự hệ số: HP / ATK / DEF / đột phá / cooldown. Đây là các giá trị trong ROOTS_DATA; không phải hệ số nào cũng đang được áp dụng bởi lệnh hiện tại.",
+            bullets: [
+                "Kim 1/1,2/1,1/1/1 · Mộc 1,1/0,9/1/1,1/0,9 · Thủy 1/1/1,2/1/0,9 · Hỏa 0,9/1,3/0,9/1,1/1 · Thổ 1,4/0,8/1,4/1/1.",
+                "Lôi 0,9/1,5/0,9/1,2/1,1 · Băng 1/1,1/1,1/1/1 · Phong 0,9/1/0,9/1/0,7 · Ám 0,9/1,2/0,9/1,1/0,9.",
+                "Quang 1/1,2/1,1/1,1/1 · Nham 1,3/1,1/1,3/1/1,1 · Độc 0,9/1,2/0,9/1/1 · Huyết 1,1/1,3/1/1,1/1.",
+                "Kiếm 1/1,4/0,9/1,2/0,9 · Trận 1/1,1/1,2/1/1 · Vô Định 1/1/1/1,5/0,8.",
+                "Không Gian 1,2/1,5/1,2/1,5/0,5 · Thời Gian 1,5/1,5/1,5/2/0,5 · Hỗn Độn 2/2/2/2/0,5.",
+                "Huyền Hoàng 3/1,5/3/1,5/1 · Vô Linh 2/2/2/1/1,2."
+            ],
+            wide: true
+        },
+        {
+            title: "6 · Hồ sơ và chỉ số",
+            text: "stats là hồ sơ chiến đấu; linhthach là hồ sơ tu tiên/hành trang. Các trường hiện được code lưu và hiển thị gồm:",
+            bullets: [
+                "Chiến đấu: HP/Max HP, MP/Max MP, ATK, DEF, Khí Vận (mặc định 1–100), Nghiệp Lực, số trận PK thắng/thua.",
+                "Tu tiên: linh căn, đường tu, cảnh giới/tầng, tu vi hiện có/ngưỡng, Linh Thạch, Tông Môn/chức vụ, vũ khí, giáp và linh thú.",
+                "Công thức nền theo realm r và tầng l: HP = 100 + 80r + 20l; MP = 50 + 40r + 10l; ATK = 10 + 15r + 3l; DEF = 5 + 8r + 2l. Hàm tính dự kiến nhân các hệ số chủng tộc."
+            ],
+            examples: [
+                { command: "stats", description: "Xem hồ sơ chiến đấu." },
+                { command: "linhthach", description: "Xem hồ sơ tu tiên và trang bị." }
+            ],
+            note: "Lưu ý lỗi trong source hiện tại: RACES chỉ khai báo tên chủng tộc, nhưng hàm đồng bộ chỉ số còn truy cập hp_mul/mp_mul/atk_mul/def_mul và desc. Vì vậy stats hoặc đổi chủng tộc có thể lỗi cho đến khi các trường này được bổ sung."
+        },
+        {
+            title: "7 · Cửa hàng, vật phẩm và công pháp",
+            text: "Dùng Linh Thạch tại shop, mua theo ID rồi xem kho. Item được dùng bằng ID đúng như trong danh sách.",
+            examples: [
+                { command: "shop  →  mua <id>  →  kho", description: "Xem hàng, mua và kiểm tra túi." },
+                { command: "dungthuoc <id>  /  moruong <id>", description: "Dùng vật phẩm hoặc mở rương." },
+                { command: "duc  /  duc <recipe_id>  /  cuonghoa <id>", description: "Xem công thức, chế tạo, cường hóa." },
+                { command: "p congphap  /  p hoc cp_1", description: "Xem/học công pháp; các công pháp cơ bản có buff đột phá được khai báo." },
+                { command: "p thanthong  /  p hoc tt_1", description: "Xem/học thần thông theo yêu cầu cảnh giới." }
+            ],
+            bullets: [
+                "Thần thông khai báo: tt_1 cần Luyện Khí (+50 ATK), tt_2 cần Kim Đan (+100 DEF), tt_3 cần Nguyên Anh (+200 ATK), tt_4 cần Luyện Hư (+500 ATK)."
+            ],
+            note: "tutienhelp có nhắc luyendan, nhưng hiện không tìm thấy nhánh xử lý lệnh này trong bot.py; wiki không coi đây là lệnh đang hoạt động."
+        },
+        {
+            title: "8 · Tông Môn",
+            text: "Sau khi nhập môn, gia nhập một trong ba Tông Môn. Nhiệm vụ tạo cống hiến; dùng cống hiến để tăng chức vụ hoặc học kinh.",
+            examples: [
+                { command: "giatong 1|2|3", description: "Thanh Vân Môn · Quỷ Vương Tông · Thiên Cơ Các." },
+                { command: "nhiemvu", description: "Xem nhiệm vụ và trạng thái tiến độ." },
+                { command: "nhantongmon <id>  /  noptongmon <id>", description: "Nhận thưởng hoặc nộp vật phẩm cho nhiệm vụ." },
+                { command: "thangcap  /  tangkinh", description: "Tăng chức hoặc đổi 100 cống hiến lấy kinh." },
+                { command: "duocvien  /  tythi", description: "Thu hoạch Linh Thạch (hồi 60 giây) hoặc tỷ thí." }
+            ],
+            bullets: [
+                "Thứ bậc: Tạp Dịch → Ngoại Môn → Nội Môn → Chân Truyền → Trưởng Lão → Chưởng Môn.",
+                "Chi phí thăng cấp bằng bậc kế tiếp × 100 cống hiến."
+            ]
+        },
+        {
+            title: "9 · Linh Thạch và khai khoáng",
+            text: "Linh Thạch dùng trong cửa hàng Tu Tiên. Có bốn phẩm cấp; lệnh quy đổi tự gộp đủ 100 viên lên một phẩm cấp kế tiếp.",
+            examples: [
+                { command: "p khaimo", description: "Đào mỏ, hồi 5 phút." },
+                { command: "p quydoi", description: "Xem túi Hạ/Trung/Thượng/Cực Phẩm và gộp cấp." }
+            ],
+            bullets: [
+                "Tỷ lệ đào trong code: 70% nhận 10–50 Hạ Phẩm; 25% nhận 1–5 Trung Phẩm; 5% nhận 1 Thượng Phẩm.",
+                "Tỷ lệ quy đổi: 100 Hạ = 1 Trung, 100 Trung = 1 Thượng, 100 Thượng = 1 Cực Phẩm."
+            ]
+        }
+    ],
+    mmo: [
+        {
+            title: "Chủng tộc và chế độ",
+            text: "Code khai báo Nhân, Yêu, Hồn, Vu Tộc; chế độ gồm Phản Phái, Cẩu Đạo, Chưởng Môn. Chọn chủng tộc trước khi bắt đầu tu luyện.",
+            examples: [
+                { command: "chungtoc", description: "Xem/chọn chủng tộc." },
+                { command: "chedo", description: "Xem/chọn chế độ." },
+                { command: "stats", description: "Xem hồ sơ chiến đấu và trạng thái PK." }
+            ],
+            note: "Các hệ số mô tả chủng tộc chưa có đủ trong bảng RACES hiện tại; xem mục Chỉ số trong hướng dẫn Tu Tiên."
+        },
+        {
+            title: "PK, săn quái và bản đồ",
+            text: "Tăng cảnh giới để mở thêm đối thủ và khu vực. Dùng bản đồ để xem yêu cầu từng tầng trước khi di chuyển.",
+            examples: [
+                { command: "pk @user", description: "Thách đấu người chơi." },
+                { command: "p sanquai", description: "Săn yêu thú có yêu cầu cảnh giới phù hợp." },
+                { command: "p bando  /  p map", description: "Xem bản đồ và cấp đề nghị." },
+                { command: "p dichuyen <1-5>", description: "Đến tầng bản đồ nếu đủ cảnh giới." }
+            ],
+            bullets: [
+                "Quái trong danh sách hiện tại mở từ Luyện Khí, Trúc Cơ, Kim Đan, Nguyên Anh đến Hóa Thần; phần thưởng tăng theo cấp quái."
+            ]
+        }
+    ],
+    werewolf: [
+        {
+            title: "Tạo và tham gia ván",
+            text: "Dùng slash command /masoi, chọn tạo ván; người chơi tham gia bằng nút trong lobby. Lệnh info và hủy phụ thuộc trạng thái ván/quyền host.",
+            examples: [
+                { command: "/masoi", description: "Tạo lobby hoặc chọn hành động." },
+                { command: "/masoi action:info", description: "Xem thông tin ván." },
+                { command: "/masoi action:huy", description: "Hủy ván khi là host hoặc Admin." }
+            ]
+        },
+        {
+            title: "Vật phẩm và thống kê",
+            text: "Dùng slash command để xem kho, sử dụng item hoặc tra cứu kết quả.",
+            examples: [
+                { command: "/items", description: "Xem kho vật phẩm." },
+                { command: "/item <index> [target]", description: "Dùng item trong ván." },
+                { command: "/wwstats  /  /wwtop", description: "Xem thống kê hoặc bảng xếp hạng." }
+            ]
+        }
+    ],
+    admin: [
+        {
+            title: "Quyền sử dụng",
+            text: "Lệnh quản trị chỉ hoạt động với quyền Discord hoặc role staff mà bot yêu cầu. Chọn lệnh slash, điền tham số trên giao diện và kiểm tra phản hồi.",
+            examples: [
+                { command: "/perm", description: "Quản lý role staff; giới hạn Owner/Admin." },
+                { command: "/ban  /  /kick  /  /mute", description: "Kiểm duyệt thành viên theo quyền server." },
+                { command: "/verify  /  /antinuke", description: "Cấu hình xác minh và anti-nuke." }
+            ],
+            note: "Nếu lệnh không hiện, kiểm tra bot đã được mời với applications.commands và bạn có quyền dùng lệnh trong server."
+        },
+        {
+            title: "Tiện ích nội bộ",
+            text: "Một số lệnh chỉ dành cho người được cấp quyền hoặc Owner; không chia sẻ kết quả chứa thông tin nội bộ.",
+            examples: [
+                { command: "/say  /  /sayembed", description: "Gửi nội dung bằng bot theo quyền đã cấp." },
+                { command: "/dm  /  /dmembed  /  /dmmass", description: "Gửi DM theo quyền được cấp." },
+                { command: "/console  /  /token  /  /quest", description: "Công cụ Owner." }
+            ]
+        }
+    ]
+};
+
+const categoryNav = document.querySelector("#category-nav");
+const categoryList = document.querySelector("#category-list");
+const categoryTiles = document.querySelector("#category-tiles");
+const categoryOverview = document.querySelector("#category-overview");
+const categoryDetail = document.querySelector("#category-detail");
+const guideIndex = document.querySelector("#guide-index");
+const guideGrid = document.querySelector("#guide-grid");
+const searchInput = document.querySelector("#command-search");
+const resultCount = document.querySelector("#result-count");
+const detailResultCount = document.querySelector("#detail-result-count");
+const emptyState = document.querySelector("#empty-state");
+const toast = document.querySelector("#toast");
+let selectedCategoryId = null;
+let toastTimer;
+let wasSearching = false;
+
+function makeElement(tag, className, text) {
+    const element = document.createElement(tag);
+    if (className) element.className = className;
+    if (text !== undefined) element.textContent = text;
+    return element;
+}
+
+function renderWiki() {
+    let total = 0;
+    categories.forEach((category, index) => {
+        const nav = makeElement("button", "nav-item", "");
+        nav.type = "button";
+        nav.dataset.category = category.id;
+        nav.setAttribute("aria-pressed", "false");
+        nav.append(makeElement("span", "nav-icon", category.icon), makeElement("span", "", category.title));
+        categoryNav.append(nav);
+
+        const tile = makeElement("button", "category-tile", "");
+        tile.type = "button";
+        tile.dataset.category = category.id;
+        tile.style.animationDelay = `${Math.min(index * 45, 315)}ms`;
+        tile.append(makeElement("span", "tile-icon", category.icon));
+        const tileCopy = makeElement("span", "tile-copy");
+        tileCopy.append(
+            makeElement("strong", "", category.title),
+            makeElement("small", "", category.description),
+            makeElement("span", "tile-count", `${category.commands.length} lệnh · xem hướng dẫn`)
+        );
+        tile.append(tileCopy, makeElement("span", "tile-arrow", "↗"));
+        categoryTiles.append(tile);
+
+        const section = makeElement("section", `category-section reveal tint-${category.tint}`);
+        section.id = `category-${category.id}`;
+        section.dataset.category = category.id;
+        section.style.animationDelay = `${Math.min(index * 45, 315)}ms`;
+
+        const header = makeElement("div", "category-header");
+        header.append(makeElement("div", "category-icon", category.icon));
+        const title = makeElement("div", "category-title");
+        title.append(makeElement("h3", "", category.title), makeElement("p", "", category.description));
+        header.append(title);
+        const count = makeElement("span", "category-count", `${category.commands.length} LỆNH`);
+        header.append(count);
+
+        const grid = makeElement("div", "command-grid");
+        category.commands.forEach(command => {
+            total += 1;
+            const card = makeElement("article", "command-card");
+            card.dataset.search = `${command.usage} ${command.description} ${command.permission || ""}`.toLocaleLowerCase("vi");
+            const top = makeElement("div", "command-top");
+            top.append(makeElement("code", "", command.usage));
+            const type = makeElement("span", `command-type ${command.kind === "slash" ? "slash" : ""}`,
+                command.kind === "slash" ? "SLASH" : command.kind === "both" ? "CẢ HAI" : "PREFIX");
+            top.append(type);
+            const copy = makeElement("button", "copy-command", "⧉");
+            copy.type = "button";
+            copy.title = "Sao chép cú pháp";
+            copy.setAttribute("aria-label", `Sao chép ${command.usage}`);
+            copy.dataset.copy = command.usage.split("  /  ")[0];
+            top.append(copy);
+            card.append(top, makeElement("p", "", command.description));
+            if (command.permission) card.append(makeElement("span", "permission", `◇ ${command.permission}`));
+            grid.append(card);
+        });
+        section.append(header, grid);
+        categoryList.append(section);
+    });
+
+    document.querySelector("#command-total").textContent = total;
+    document.querySelector("#category-total").textContent = categories.length;
+    resultCount.textContent = `${categories.length} danh mục · ${total} lệnh`;
+    filterCommands();
+    observeReveals();
+}
+
+function renderGuides(category) {
+    guideIndex.replaceChildren();
+    guideGrid.replaceChildren();
+    const guides = categoryGuides[category.id] || [];
+
+    guides.forEach((guide, index) => {
+        const guideId = `guide-${category.id}-${index + 1}`;
+        const jump = makeElement("button", "guide-jump", guide.title);
+        jump.type = "button";
+        jump.dataset.guideTarget = guideId;
+        guideIndex.append(jump);
+
+        const card = makeElement("article", `guide-card reveal${guide.wide ? " guide-card-wide" : ""}`);
+        card.id = guideId;
+        card.append(makeElement("h3", "", guide.title));
+        if (guide.text) card.append(makeElement("p", "", guide.text));
+
+        if (guide.bullets) {
+            const list = makeElement("ul", "");
+            guide.bullets.forEach(item => list.append(makeElement("li", "", item)));
+            card.append(list);
+        }
+
+        if (guide.examples) {
+            const examples = makeElement("div", "guide-examples");
+            guide.examples.forEach(example => {
+                const row = makeElement("div", "guide-example");
+                row.append(makeElement("code", "", example.command), makeElement("span", "", example.description));
+                examples.append(row);
+            });
+            card.append(examples);
+        }
+
+        if (guide.realms) {
+            const realms = makeElement("ol", "realm-list");
+            guide.realms.forEach(realm => realms.append(makeElement("li", "", realm)));
+            card.append(realms);
+        }
+
+        if (guide.note) card.append(makeElement("p", "guide-note", guide.note));
+        guideGrid.append(card);
+    });
+
+    guideIndex.hidden = guides.length === 0;
+}
+
+function openCategory(categoryId) {
+    const category = categories.find(item => item.id === categoryId);
+    if (!category) return;
+
+    selectedCategoryId = categoryId;
+    searchInput.value = "";
+    categoryOverview.hidden = true;
+    categoryDetail.hidden = false;
+    document.querySelector("#detail-kicker").textContent = `HƯỚNG DẪN ${category.title.toLocaleUpperCase("vi")}`;
+    document.querySelector("#detail-title").textContent = category.title;
+    document.querySelector("#detail-description").textContent = category.description;
+    renderGuides(category);
+    document.querySelectorAll(".nav-item").forEach(item => {
+        const active = item.dataset.category === categoryId;
+        item.classList.toggle("active", active);
+        item.setAttribute("aria-pressed", String(active));
+    });
+    filterCommands();
+    observeReveals();
+    categoryDetail.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function showCategories() {
+    selectedCategoryId = null;
+    searchInput.value = "";
+    document.querySelectorAll(".nav-item").forEach(item => {
+        item.classList.remove("active");
+        item.setAttribute("aria-pressed", "false");
+    });
+    filterCommands();
+    categoryOverview.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function normalizeText(text) {
+    return text.toLocaleLowerCase("vi").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function filterCommands() {
+    const query = normalizeText(searchInput.value.trim());
+    const searching = Boolean(query);
+    let visibleCommands = 0;
+    let visibleCategories = 0;
+    categoryOverview.hidden = searching || Boolean(selectedCategoryId);
+    categoryDetail.hidden = !searching && !selectedCategoryId;
+    guideIndex.hidden = searching || !selectedCategoryId;
+    guideGrid.hidden = searching || !selectedCategoryId;
+
+    if (searching) {
+        document.querySelector("#detail-kicker").textContent = "TÌM KIẾM TOÀN BỘ WIKI";
+        document.querySelector("#detail-title").textContent = "Kết quả tìm kiếm";
+        document.querySelector("#detail-description").textContent = "Kết quả được lọc theo tên lệnh và nội dung mô tả.";
+    }
+
+    document.querySelectorAll(".category-section").forEach(section => {
+        const categoryAllowed = searching || !selectedCategoryId || section.dataset.category === selectedCategoryId;
+        let visibleInSection = 0;
+        section.querySelectorAll(".command-card").forEach(card => {
+            const matches = categoryAllowed && (!query || normalizeText(card.dataset.search).includes(query));
+            card.hidden = !matches;
+            if (matches) visibleInSection += 1;
+        });
+        section.hidden = !categoryAllowed || visibleInSection === 0;
+        if (visibleInSection) {
+            visibleCategories += 1;
+            visibleCommands += visibleInSection;
+        }
+        section.querySelector(".category-count").textContent = `${visibleInSection} LỆNH`;
+    });
+    resultCount.textContent = `${categories.length} danh mục · ${document.querySelector("#command-total").textContent} lệnh`;
+    detailResultCount.textContent = searching
+        ? `${visibleCommands} kết quả · ${visibleCategories} mục`
+        : `${visibleCommands} lệnh`;
+    emptyState.hidden = !searching || visibleCommands !== 0;
+    if (searching && !wasSearching) document.querySelector("#commands-heading").scrollIntoView({ behavior: "smooth", block: "start" });
+    wasSearching = searching;
+}
+
+function showToast(message) {
+    toast.textContent = message;
+    toast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove("show"), 1800);
+}
+
+async function copyCommand(value) {
+    try {
+        await navigator.clipboard.writeText(value);
+        showToast(`Đã sao chép: ${value}`);
+    } catch (error) {
+        showToast("Không thể truy cập clipboard trên trang này.");
+    }
+}
+
+function observeReveals() {
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add("visible");
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.08 });
+    document.querySelectorAll(".reveal:not(.visible)").forEach(element => observer.observe(element));
+}
+
+document.addEventListener("click", event => {
+    const copyButton = event.target.closest("[data-copy]");
+    if (copyButton) {
+        event.preventDefault();
+        copyCommand(copyButton.dataset.copy);
+        return;
+    }
+
+    const categoryButton = event.target.closest("[data-category]");
+    if (categoryButton) {
+        openCategory(categoryButton.dataset.category);
+        document.querySelector("#sidebar").classList.remove("open");
+        document.querySelector("#menu-toggle").setAttribute("aria-expanded", "false");
+        return;
+    }
+
+    const guideButton = event.target.closest("[data-guide-target]");
+    if (guideButton) {
+        document.getElementById(guideButton.dataset.guideTarget)?.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+    }
+
+    if (event.target.closest("#back-to-categories")) {
+        showCategories();
+        return;
+    }
+});
+
+searchInput.addEventListener("input", filterCommands);
+document.querySelector("#menu-toggle").addEventListener("click", event => {
+    const opened = document.querySelector("#sidebar").classList.toggle("open");
+    event.currentTarget.setAttribute("aria-expanded", String(opened));
+});
+document.addEventListener("keydown", event => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        searchInput.focus();
+    }
+    if (event.key === "Escape") {
+        if (searchInput.value) {
+            searchInput.value = "";
+            filterCommands();
+        } else if (selectedCategoryId) {
+            showCategories();
+        }
+        document.querySelector("#sidebar").classList.remove("open");
+        document.querySelector("#menu-toggle").setAttribute("aria-expanded", "false");
+    }
+});
+
+renderWiki();
+
+    </script>
+</body>
+</html>
